@@ -1,5 +1,6 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
+#include <string>
 #include "kinect.h"
 
 namespace py = pybind11;
@@ -103,12 +104,12 @@ PYBIND11_MODULE(kinz, m) {
 
 
     py::class_<Kinect>(m, "Kinect")
-        .def(py::init<uint8_t, int, bool, bool, uint8_t, bool, bool, bool, bool, bool, bool>(),
+        .def(py::init<uint8_t, int, bool, bool, uint8_t, bool, bool, bool, bool, bool, bool, const std::string>(),
              py::arg("deviceIndex")=0, py::arg("resolution")=1080, py::arg("wfov")=false,
              py::arg("binned")=true, py::arg("framerate")=30, py::arg("sensor_color")=true,
              py::arg("sensor_depth")=true, py::arg("sensor_ir")=true,
              py::arg("imu_sensors")=false, py::arg("body_tracking")=false,
-             py::arg("body_index")=false)
+             py::arg("body_index")=false, py::arg("sync_mode")=std::string("none"))
         .def("get_frames", &Kinect::get_frames, "Read frames from Kinect",
             py::arg("get_color")=true, py::arg("get_depth")=true,
             py::arg("get_ir")=true, py::arg("get_sensors")=false,
@@ -147,6 +148,8 @@ PYBIND11_MODULE(kinz, m) {
         .def("map_coords_3d_to_color", &Kinect::map_coords_3d_to_color,
             "Map 3D coordinates to color space",
             py::arg("coords3d"), py::arg("depth_reference")=true)
+        .def("get_depth2pc_map", &Kinect::get_depth2pc_map,
+             "Generate a map of xy offsets for depth to pointcloud transformation")
         #ifdef BODY
         .def("get_num_bodies", &Kinect::get_num_bodies, "Get number of bodies found")
         .def("get_bodies", &Kinect::get_bodies, "Get bodies list")

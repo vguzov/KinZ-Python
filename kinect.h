@@ -13,8 +13,10 @@
 
 #include <string>
 #include <k4a/k4a.h>
+#include <pybind11/numpy.h>
 #include "utils.h"
 #include "calibration.h"
+
 
 #ifdef BODY
 #include <k4abt.h>
@@ -70,7 +72,7 @@ private:
     int initialize(uint8_t deviceIndex, int resolution, bool wfov,
                    bool binned, uint8_t framerate, bool sensor_color,
                    bool sensor_depth, bool sensor_ir, bool imu_sensors,
-                   bool body_tracking, bool body_index);
+                   bool body_tracking, bool body_index, const std::string sync_mode);
     bool align_depth_to_color(int width, int height,
                         k4a_image_t &transformed_depth_image);
     bool align_color_to_depth(k4a_image_t &transformed_color_image);
@@ -88,7 +90,7 @@ public:
            bool binned = true, uint8_t framerate = 30, bool sensor_color = true,
            bool sensor_depth = true, bool sensor_ir = true,
            bool imu_sensors = false, bool body_tracking = false,
-           bool body_index = false);
+           bool body_index = false, const std::string sync_mode = std::string("none"));
     ~Kinect();
 
     void close();
@@ -114,6 +116,7 @@ public:
     std::vector<std::vector<int> > map_coords_depth_to_3D(std::vector<std::vector<int> > &depth_coords, bool depth_reference);
     std::vector<std::vector<int> > map_coords_3d_to_depth(std::vector<std::vector<int> > &coords3d, bool depth_reference);
     std::vector<std::vector<int> > map_coords_3d_to_color(std::vector<std::vector<int> > &coords3d, bool depth_reference);
+    py::array_t<float> get_depth2pc_map();
 
     // Body tracking functions
     #ifdef BODY

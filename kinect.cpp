@@ -15,14 +15,15 @@
 #include "kinect.h"
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
+#include <pybind11/numpy.h>
 
 Kinect::Kinect(uint8_t deviceIndex, int resolution, bool wfov, bool binned,
                uint8_t framerate, bool sensor_color, bool sensor_depth,
                bool sensor_ir, bool imu_sensors, bool body_tracking,
-               bool body_index) {
+               bool body_index, const std::string sync_mode) {
     initialize(deviceIndex, resolution, wfov, binned, framerate,
                sensor_color, sensor_depth, sensor_ir, imu_sensors,
-               body_tracking, body_index);
+               body_tracking, body_index, sync_mode);
 }
 
 Kinect::~Kinect()
@@ -41,7 +42,7 @@ Kinect::~Kinect()
 */
 int Kinect::initialize(uint8_t deviceIndex, int resolution, bool wfov, bool binned, uint8_t framerate,
     bool sensor_color, bool sensor_depth, bool sensor_ir, bool imu_sensors, bool body_tracking,
-    bool body_index)
+    bool body_index, const std::string sync_mode)
 {
     // Values initialization
     // Color resolution
@@ -119,6 +120,21 @@ int Kinect::initialize(uint8_t deviceIndex, int resolution, bool wfov, bool binn
                 m_config.color_resolution = K4A_COLOR_RESOLUTION_1080P;
                 break;
         }
+    }
+
+    m_config.wired_sync_mode = K4A_WIRED_SYNC_MODE_STANDALONE;
+    // Configure sync mode
+    if (sync_mode == "master")
+    {
+        m_config.wired_sync_mode = K4A_WIRED_SYNC_MODE_MASTER;
+    }
+    else if (sync_mode == "subordinate")
+    {
+        m_config.wired_sync_mode = K4A_WIRED_SYNC_MODE_SUBORDINATE;
+    }
+    else if (sync_mode != "none")
+    {
+        printf("Unknown sync mode %s, falling back to 'none'", sync_mode.c_str());
     }
 
     // Configure Depth sensor
@@ -282,7 +298,6 @@ Calibration Kinect::get_depth_calibration() {
 Calibration Kinect::get_color_calibration() {
     return m_color_calib;
 }
-
 
 const int Kinect::get_frames(bool get_color, bool get_depth,
                              bool get_ir, bool get_sensors,
@@ -691,6 +706,8 @@ void Kinect::set_gain(int gain) {
     }
 }
 
+
+
 std::vector<std::vector<int> > Kinect::map_coords_color_to_depth(std::vector<std::vector<int> > &color_coords) {
     k4a_float2_t init_coords, depth_coords;
     std::vector<std::vector<int> > final_coords;
@@ -1080,6 +1097,48 @@ void Kinect::save_pointcloud(const char *file_name) {
     else {
         printf("No depth image available for generating Pointcloud\n");
     }
+}
+
+py::array_t<float> Kinect::get_depth2pc_map() {
+    auto depth_calibration = get_depth_calibration();
+    int width = depth_calibration.width, height = depth_calibration.height;
+    float *map = new float[width*height*2];
+    k4a_float2_t p;
+    k4a_float3_t ray;
+    int valid;
+
+    for (int y = 0, idx = 0; y < height; y++)
+    {
+        p.xy.y = (float)y;
+        for (int x = 0; x < width; x++, idx++)
+        {
+            p.xy.x = (float)x;
+
+            k4a_calibration_2d_to_3d(
+                    &m_calibration, &p, 1.f, K4A_CALIBRATION_TYPE_DEPTH, K4A_CALIBRATION_TYPE_DEPTH, &ray, &valid);
+
+            if (valid)
+            {
+                map[2*idx] = ray.xyz.x;
+                map[2*idx+1] = ray.xyz.y;
+            }
+            else
+            {
+                map[2 * idx] = nanf("");
+                map[2 * idx + 1] = nanf("");
+            }
+        }
+    }
+    py::capsule free_when_done(map, [](void *f) {
+        float *arr = reinterpret_cast<float *>(f);
+        delete[] arr;
+    });
+
+    return py::array_t<float>(
+            {height, width, 2}, // shape
+            {width*2*sizeof(float), 2*sizeof(float), sizeof(float)}, // strides
+            map, // data pointer
+            free_when_done); // numpy array references this parent
 }
 
 #ifdef BODY
