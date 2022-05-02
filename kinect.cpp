@@ -20,10 +20,10 @@
 Kinect::Kinect(uint8_t deviceIndex, int resolution, bool wfov, bool binned,
                uint8_t framerate, bool sensor_color, bool sensor_depth,
                bool sensor_ir, bool imu_sensors, bool body_tracking,
-               bool body_index, const std::string sync_mode) {
+               bool body_index, const std::string sync_mode, int sync_capture_delay) {
     initialize(deviceIndex, resolution, wfov, binned, framerate,
                sensor_color, sensor_depth, sensor_ir, imu_sensors,
-               body_tracking, body_index, sync_mode);
+               body_tracking, body_index, sync_mode, sync_capture_delay);
 }
 
 Kinect::~Kinect()
@@ -42,7 +42,7 @@ Kinect::~Kinect()
 */
 int Kinect::initialize(uint8_t deviceIndex, int resolution, bool wfov, bool binned, uint8_t framerate,
     bool sensor_color, bool sensor_depth, bool sensor_ir, bool imu_sensors, bool body_tracking,
-    bool body_index, const std::string sync_mode)
+    bool body_index, const std::string sync_mode, int sync_capture_delay)
 {
     // Values initialization
     // Color resolution
@@ -58,8 +58,8 @@ int Kinect::initialize(uint8_t deviceIndex, int resolution, bool wfov, bool binn
 
     // Devices available
     uint32_t m_device_count = k4a_device_get_installed_count();
-    
-    if (m_device_count == 0) 
+
+    if (m_device_count == 0)
     {
         printf("No K4A m_devices found\n");
         return 1;
@@ -91,12 +91,12 @@ int Kinect::initialize(uint8_t deviceIndex, int resolution, bool wfov, bool binn
         m_config.synchronized_images_only = true;
 
     // Color Configuration
-    if (sensor_color) 
+    if (sensor_color)
     {
         // Consider K4A_IMAGE_FORMAT_COLOR_MJPG. It is less CPU expensive
         m_config.color_format = K4A_IMAGE_FORMAT_COLOR_BGRA32;
         // m_config.color_format = K4A_IMAGE_FORMAT_COLOR_MJPG;
-        
+
         switch(resolution) {
             case 720:
                 m_config.color_resolution = K4A_COLOR_RESOLUTION_720P;
@@ -137,8 +137,15 @@ int Kinect::initialize(uint8_t deviceIndex, int resolution, bool wfov, bool binn
         printf("Unknown sync mode %s, falling back to 'none'", sync_mode.c_str());
     }
 
+    if (sync_capture_delay < 0)
+    {
+        printf("Negative sync capture delays are not supported, falling back to zero delay");
+        sync_capture_delay = 0;
+    }
+    m_config.subordinate_delay_off_master_usec = sync_capture_delay;
+
     // Configure Depth sensor
-    if (!sensor_ir && !sensor_depth) 
+    if (!sensor_ir && !sensor_depth)
     {
         m_config.depth_mode = K4A_DEPTH_MODE_OFF;
     }
@@ -286,9 +293,9 @@ void Kinect::update_calibration(Calibration &calib_struct, bool depth) {
     calib_struct.cody = calib.intrinsics.parameters.param.cody;
     for(int i=0; i<9; i++)
         calib_struct.rotation[i] = calib.extrinsics.rotation[i];
-    for(int i=0; i<3; i++)        
+    for(int i=0; i<3; i++)
         calib_struct.translation[i] = calib.extrinsics.translation[i];
-    
+
 }
 
 Calibration Kinect::get_depth_calibration() {
@@ -353,10 +360,10 @@ const int Kinect::get_frames(bool get_color, bool get_depth,
         case K4A_WAIT_RESULT_FAILED:
             printf("Failed to read a m_capture\n");
             printf("Restarting streaming ...");
-            k4a_device_stop_cameras	(m_device);	
+            k4a_device_stop_cameras	(m_device);
             if(K4A_RESULT_SUCCEEDED != k4a_device_start_cameras(m_device, &m_config)) {
                 printf("Failed to restart streaming\n");
-                k4a_device_stop_cameras	(m_device);	
+                k4a_device_stop_cameras	(m_device);
                 return 0;
             }
     }
@@ -496,7 +503,7 @@ ColorData Kinect::get_color_data() {
         void* data = malloc(sz);
         memcpy(data, dataBuffer, sz);
         BufferColor m((uint8_t *)data, h, w, stride);
-        
+
         color_data.buffer = m;
         color_data.timestamp_nsec = k4a_image_get_system_timestamp_nsec(m_image_c);
         return color_data;
@@ -522,7 +529,7 @@ DepthData Kinect::get_depth_data() {
                 m_image_d = NULL;
                 m_image_d = image_dc;
             }
-            else 
+            else
                 printf("Failed to align\n");
         }
 
@@ -559,7 +566,7 @@ DepthData Kinect::get_ir_data() {
         void* data = malloc(sz);
         memcpy(data, dataBuffer, sz);
         BufferDepth m((uint16_t *)data, h, w, stride);
-        
+
         ir_data.buffer = m;
         ir_data.timestamp_nsec = k4a_image_get_system_timestamp_nsec(m_image_ir);
         return ir_data;
@@ -594,7 +601,7 @@ bool Kinect::align_depth_to_color(int width, int height, k4a_image_t &transforme
 bool Kinect::align_color_to_depth(k4a_image_t &transformed_color_image){
     int depth_image_width_pixels = k4a_image_get_width_pixels(m_image_d);
     int depth_image_height_pixels = k4a_image_get_height_pixels(m_image_d);
-    
+
     transformed_color_image = NULL;
     if (K4A_RESULT_SUCCEEDED != k4a_image_create(K4A_IMAGE_FORMAT_COLOR_BGRA32,
                                                  depth_image_width_pixels,
@@ -867,7 +874,7 @@ std::vector<std::vector<int> > Kinect::map_coords_depth_to_3D(
             coordsdepth.xy.y = depth_coords[i][1];
             // get depth value
             float depth = (float)depth_data[stride*depth_coords[i][1] + depth_coords[i][0]];
-            k4a_calibration_2d_to_3d(&m_calibration, &coordsdepth, depth, 
+            k4a_calibration_2d_to_3d(&m_calibration, &coordsdepth, depth,
                                      source_calib,
                                      reference,
                                      &coords3d, &valid);

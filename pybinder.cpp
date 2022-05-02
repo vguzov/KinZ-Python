@@ -104,12 +104,13 @@ PYBIND11_MODULE(kinz, m) {
 
 
     py::class_<Kinect>(m, "Kinect")
-        .def(py::init<uint8_t, int, bool, bool, uint8_t, bool, bool, bool, bool, bool, bool, const std::string>(),
+        .def(py::init<uint8_t, int, bool, bool, uint8_t, bool, bool, bool, bool, bool, bool, const std::string, int>(),
              py::arg("deviceIndex")=0, py::arg("resolution")=1080, py::arg("wfov")=false,
              py::arg("binned")=true, py::arg("framerate")=30, py::arg("sensor_color")=true,
              py::arg("sensor_depth")=true, py::arg("sensor_ir")=true,
              py::arg("imu_sensors")=false, py::arg("body_tracking")=false,
-             py::arg("body_index")=false, py::arg("sync_mode")=std::string("none"))
+             py::arg("body_index")=false, py::arg("sync_mode")=std::string("none"),
+             py::arg("sync_capture_delay")=0)
         .def("get_frames", &Kinect::get_frames, "Read frames from Kinect",
             py::arg("get_color")=true, py::arg("get_depth")=true,
             py::arg("get_ir")=true, py::arg("get_sensors")=false,

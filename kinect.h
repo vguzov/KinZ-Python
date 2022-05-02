@@ -72,7 +72,7 @@ private:
     int initialize(uint8_t deviceIndex, int resolution, bool wfov,
                    bool binned, uint8_t framerate, bool sensor_color,
                    bool sensor_depth, bool sensor_ir, bool imu_sensors,
-                   bool body_tracking, bool body_index, const std::string sync_mode);
+                   bool body_tracking, bool body_index, const std::string sync_mode, int sync_capture_delay);
     bool align_depth_to_color(int width, int height,
                         k4a_image_t &transformed_depth_image);
     bool align_color_to_depth(k4a_image_t &transformed_color_image);
@@ -90,7 +90,8 @@ public:
            bool binned = true, uint8_t framerate = 30, bool sensor_color = true,
            bool sensor_depth = true, bool sensor_ir = true,
            bool imu_sensors = false, bool body_tracking = false,
-           bool body_index = false, const std::string sync_mode = std::string("none"));
+           bool body_index = false, const std::string sync_mode = std::string("none"),
+           int sync_capture_delay = 0);
     ~Kinect();
 
     void close();
