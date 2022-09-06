@@ -89,18 +89,21 @@ PYBIND11_MODULE(kinz, m) {
     py::class_<ColorData>(m, "ColorData")
         .def(py::init())
         .def_readonly("buffer", &ColorData::buffer)
-        .def_readonly("timestamp_nsec", &ColorData::timestamp_nsec);
+        .def_readonly("system_timestamp_nsec", &ColorData::system_timestamp_nsec)
+        .def_readonly("device_timestamp_usec", &ColorData::device_timestamp_usec);
 
     
     py::class_<DepthData>(m, "DepthData")
         .def(py::init())
         .def_readonly("buffer", &DepthData::buffer)
-        .def_readonly("timestamp_nsec", &DepthData::timestamp_nsec);
+        .def_readonly("system_timestamp_nsec", &DepthData::system_timestamp_nsec)
+        .def_readonly("device_timestamp_usec", &DepthData::device_timestamp_usec);
 
     py::class_<BodyIndexData>(m, "BodyIndexData")
         .def(py::init())
         .def_readonly("buffer", &BodyIndexData::buffer)
-        .def_readonly("timestamp_nsec", &BodyIndexData::timestamp_nsec);
+        .def_readonly("system_timestamp_nsec", &BodyIndexData::system_timestamp_nsec)
+        .def_readonly("device_timestamp_usec", &BodyIndexData::device_timestamp_usec);
 
 
     py::class_<Kinect>(m, "Kinect")

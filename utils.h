@@ -63,17 +63,20 @@ private:
 
 struct ColorData {
     BufferColor buffer;
-    uint64_t timestamp_nsec;
+    uint64_t system_timestamp_nsec;
+    uint64_t device_timestamp_usec;
 };
 
 struct DepthData {
     BufferDepth buffer;
-    uint64_t timestamp_nsec;
+    uint64_t system_timestamp_nsec;
+    uint64_t device_timestamp_usec;
 };
 
 struct BodyIndexData {
     BufferBodyIndex buffer;
-    uint64_t timestamp_nsec;
+    uint64_t system_timestamp_nsec;
+    uint64_t device_timestamp_usec;
 };
 
 struct Imu_sample {

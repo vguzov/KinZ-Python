@@ -43,9 +43,9 @@ while True:
         color_image = cv2.cvtColor(color_image, cv2.COLOR_BGRA2BGR) # to BGR
         ir_image = np.array(ir_data.buffer, copy = True)
 
-        print('Depth shape, type, timestamp:', depth_image.shape, depth_image.dtype, depth_data.timestamp_nsec)
-        print('Color shape, type, timestamp:', color_image.shape, color_image.dtype, color_data.timestamp_nsec)
-        print('IR shape, type, timestamp:', ir_image.shape, ir_image.dtype, ir_data.timestamp_nsec)
+        print('Depth shape, type, timestamp:', depth_image.shape, depth_image.dtype, depth_data.system_timestamp_nsec)
+        print('Color shape, type, timestamp:', color_image.shape, color_image.dtype, color_data.system_timestamp_nsec)
+        print('IR shape, type, timestamp:', ir_image.shape, ir_image.dtype, ir_data.system_timestamp_nsec)
         print('Depth range values:', np.amin(depth_image), np.amax(depth_image))
         print('IR range values:', np.amin(ir_image), np.amax(ir_image))
         print('Temperature: {:.1f} Celsius'.format(sensor_data.temperature))

@@ -505,13 +505,15 @@ ColorData Kinect::get_color_data() {
         BufferColor m((uint8_t *)data, h, w, stride);
 
         color_data.buffer = m;
-        color_data.timestamp_nsec = k4a_image_get_system_timestamp_nsec(m_image_c);
+        color_data.system_timestamp_nsec = k4a_image_get_system_timestamp_nsec(m_image_c);
+        color_data.device_timestamp_usec = k4a_image_get_device_timestamp_usec(m_image_c);
         return color_data;
     }
     else {
         BufferColor m(NULL, 0, 0, 0);
         color_data.buffer = m;
-        color_data.timestamp_nsec = 0;
+        color_data.system_timestamp_nsec = 0;
+        color_data.device_timestamp_usec = 0;
         return color_data;
     }
 }
@@ -543,13 +545,15 @@ DepthData Kinect::get_depth_data() {
         BufferDepth m((uint16_t *)data, h, w, stride);
 
         depth_data.buffer = m;
-        depth_data.timestamp_nsec = k4a_image_get_system_timestamp_nsec(m_image_d);
+        depth_data.system_timestamp_nsec = k4a_image_get_system_timestamp_nsec(m_image_d);
+        depth_data.device_timestamp_usec = k4a_image_get_device_timestamp_usec(m_image_d);
         return depth_data;
     }
     else {
         BufferDepth m(NULL, 0, 0, 0);
         depth_data.buffer = m;
-        depth_data.timestamp_nsec = 0;
+        depth_data.system_timestamp_nsec = 0;
+        depth_data.device_timestamp_usec = 0;
         return depth_data;
     }
 }
@@ -568,13 +572,15 @@ DepthData Kinect::get_ir_data() {
         BufferDepth m((uint16_t *)data, h, w, stride);
 
         ir_data.buffer = m;
-        ir_data.timestamp_nsec = k4a_image_get_system_timestamp_nsec(m_image_ir);
+        ir_data.system_timestamp_nsec = k4a_image_get_system_timestamp_nsec(m_image_ir);
+        ir_data.device_timestamp_usec = k4a_image_get_device_timestamp_usec(m_image_ir);
         return ir_data;
     }
     else {
         BufferDepth m(NULL, 0, 0, 0);
         ir_data.buffer = m;
-        ir_data.timestamp_nsec = 0;
+        ir_data.system_timestamp_nsec = 0;
+        ir_data.device_timestamp_usec = 0;
         return ir_data;
     }
 }
@@ -1257,13 +1263,15 @@ BodyIndexData Kinect::get_body_index_map(bool returnId, bool inColor) {
         BufferBodyIndex m((uint8_t *)data, h, w, stride);
         
         bodyIndexMap.buffer = m;
-        bodyIndexMap.timestamp_nsec = k4a_image_get_system_timestamp_nsec(m_body_index);
+        bodyIndexMap.system_timestamp_nsec = k4a_image_get_system_timestamp_nsec(m_body_index);
+        bodyIndexMap.device_timestamp_usec = k4a_image_get_device_timestamp_usec(m_body_index);
         return bodyIndexMap;
     }
     else {
         BufferBodyIndex m(NULL, 0, 0, 0);
         bodyIndexMap.buffer = m;
-        bodyIndexMap.timestamp_nsec = 0;
+        bodyIndexMap.system_timestamp_nsec = 0;
+        bodyIndexMap.device_timestamp_usec = 0;
         return bodyIndexMap;
     }
 }
