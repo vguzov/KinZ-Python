@@ -1196,6 +1196,10 @@ py::array_t<float> Kinect::get_cameras_translation_vector() {
 
 }
 
+template py::array_t<float> Kinect::get_cameras_rotation_matrix<K4A_CALIBRATION_TYPE_DEPTH, K4A_CALIBRATION_TYPE_COLOR>();
+template py::array_t<float> Kinect::get_cameras_translation_vector<K4A_CALIBRATION_TYPE_DEPTH, K4A_CALIBRATION_TYPE_COLOR>();
+template py::array_t<float> Kinect::get_cameras_rotation_matrix<K4A_CALIBRATION_TYPE_COLOR, K4A_CALIBRATION_TYPE_DEPTH>();
+template py::array_t<float> Kinect::get_cameras_translation_vector<K4A_CALIBRATION_TYPE_COLOR, K4A_CALIBRATION_TYPE_DEPTH>();
 
 
 #ifdef BODY
