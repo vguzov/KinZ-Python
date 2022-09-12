@@ -1162,7 +1162,7 @@ py::array_t<float> Kinect::get_cameras_rotation_matrix() {
         rotation[i] = kinect_rotation[i];
     }
 
-    py::capsule free_when_done(map, [](void *f) {
+    py::capsule free_when_done(rotation, [](void *f) {
         float *arr = reinterpret_cast<float *>(f);
         delete[] arr;
     });
@@ -1183,7 +1183,7 @@ py::array_t<float> Kinect::get_cameras_translation_vector() {
         translation[i] = kinect_translation[i];
     }
 
-    py::capsule free_when_done(map, [](void *f) {
+    py::capsule free_when_done(translation, [](void *f) {
         float *arr = reinterpret_cast<float *>(f);
         delete[] arr;
     });
