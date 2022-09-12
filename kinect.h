@@ -118,6 +118,10 @@ public:
     std::vector<std::vector<int> > map_coords_3d_to_depth(std::vector<std::vector<int> > &coords3d, bool depth_reference);
     std::vector<std::vector<int> > map_coords_3d_to_color(std::vector<std::vector<int> > &coords3d, bool depth_reference);
     py::array_t<float> get_depth2pc_map();
+    template<k4a_calibration_type_t camera_from, k4a_calibration_type_t camera_to>
+    py::array_t<float> get_cameras_rotation_matrix();
+    template<k4a_calibration_type_t camera_from, k4a_calibration_type_t camera_to>
+    py::array_t<float> get_cameras_translation_vector();
 
     // Body tracking functions
     #ifdef BODY

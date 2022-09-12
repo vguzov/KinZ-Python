@@ -1154,6 +1154,50 @@ py::array_t<float> Kinect::get_depth2pc_map() {
             free_when_done); // numpy array references this parent
 }
 
+template<k4a_calibration_type_t camera_from, k4a_calibration_type_t camera_to>
+py::array_t<float> Kinect::get_cameras_rotation_matrix() {
+    float *rotation = new float[9];
+    auto kinect_rotation = m_calibration.extrinsics[camera_from][camera_to].rotation;
+    for (int i=0; i<9; i++) {
+        rotation[i] = kinect_rotation[i];
+    }
+
+    py::capsule free_when_done(map, [](void *f) {
+        float *arr = reinterpret_cast<float *>(f);
+        delete[] arr;
+    });
+
+    return py::array_t<float>(
+            {3, 3}, // shape
+            {3*sizeof(float), sizeof(float)}, // strides
+            rotation, // data pointer
+            free_when_done); // numpy array references this parent
+
+}
+
+template<k4a_calibration_type_t camera_from, k4a_calibration_type_t camera_to>
+py::array_t<float> Kinect::get_cameras_translation_vector() {
+    float *translation = new float[3];
+    auto kinect_translation = m_calibration.extrinsics[camera_from][camera_to].translation;
+    for (int i=0; i<3; i++) {
+        translation[i] = kinect_translation[i];
+    }
+
+    py::capsule free_when_done(map, [](void *f) {
+        float *arr = reinterpret_cast<float *>(f);
+        delete[] arr;
+    });
+
+    return py::array_t<float>(
+            {3, 1}, // shape
+            {sizeof(float), sizeof(float)}, // strides
+            translation, // data pointer
+            free_when_done); // numpy array references this parent
+
+}
+
+
+
 #ifdef BODY
 int Kinect::get_num_bodies() {
     return m_num_bodies;

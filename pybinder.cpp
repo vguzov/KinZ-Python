@@ -1,20 +1,21 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
+#include <k4a/k4a.h>
 #include <string>
 #include "kinect.h"
 
 namespace py = pybind11;
 
 PYBIND11_MODULE(kinz, m) {
-    
+
     py::class_<BufferDepth>(m, "BufferDepth", py::buffer_protocol())
    .def_buffer([](BufferDepth &m) -> py::buffer_info {
         return py::buffer_info(
-            m.data(),                              
-            sizeof(uint16_t),                         
+            m.data(),
+            sizeof(uint16_t),
             py::format_descriptor<uint16_t>::format(),
-            2,                                     
-            { m.rows(), m.cols()},                
+            2,
+            { m.rows(), m.cols()},
             { m.stride(), sizeof(uint16_t) }
         );
     });
@@ -22,11 +23,11 @@ PYBIND11_MODULE(kinz, m) {
     py::class_<BufferColor>(m, "BufferColor", py::buffer_protocol())
    .def_buffer([](BufferColor &m) -> py::buffer_info {
         return py::buffer_info(
-            m.data(),                              
-            sizeof(uint8_t),                         
+            m.data(),
+            sizeof(uint8_t),
             py::format_descriptor<uint8_t>::format(),
-            3,                                     
-            { m.rows(), m.cols(), size_t(4)},                
+            3,
+            { m.rows(), m.cols(), size_t(4)},
             { sizeof(unsigned char) * 4 * m.cols(),
               sizeof(unsigned char) * 4,
               sizeof(unsigned char) }
@@ -36,11 +37,11 @@ PYBIND11_MODULE(kinz, m) {
     py::class_<BufferBodyIndex>(m, "BufferBodyIndex", py::buffer_protocol())
    .def_buffer([](BufferBodyIndex &m) -> py::buffer_info {
         return py::buffer_info(
-            m.data(),                              
-            sizeof(uint8_t),                         
+            m.data(),
+            sizeof(uint8_t),
             py::format_descriptor<uint8_t>::format(),
-            2,                                     
-            { m.rows(), m.cols()},                
+            2,
+            { m.rows(), m.cols()},
             { m.stride(), sizeof(uint8_t) }
         );
     });
@@ -48,11 +49,11 @@ PYBIND11_MODULE(kinz, m) {
     py::class_<BufferPointCloud>(m, "BufferPointCloud", py::buffer_protocol())
    .def_buffer([](BufferPointCloud &m) -> py::buffer_info {
         return py::buffer_info(
-            m.data(),                              
-            sizeof(int16_t),                         
+            m.data(),
+            sizeof(int16_t),
             py::format_descriptor<int16_t>::format(),
-            3,                                     
-            { m.rows(), m.cols(), size_t(3)},                
+            3,
+            { m.rows(), m.cols(), size_t(3)},
             { m.stride(),
               sizeof(int16_t) * 3,
               sizeof(int16_t)
@@ -85,14 +86,14 @@ PYBIND11_MODULE(kinz, m) {
         .def_readonly("gyro_z", &Imu_sample::gyro_z)
         .def_readonly("gyro_timestamp_usec", &Imu_sample::gyro_timestamp_usec);
 
-    
+
     py::class_<ColorData>(m, "ColorData")
         .def(py::init())
         .def_readonly("buffer", &ColorData::buffer)
         .def_readonly("system_timestamp_nsec", &ColorData::system_timestamp_nsec)
         .def_readonly("device_timestamp_usec", &ColorData::device_timestamp_usec);
 
-    
+
     py::class_<DepthData>(m, "DepthData")
         .def(py::init())
         .def_readonly("buffer", &DepthData::buffer)
@@ -154,6 +155,14 @@ PYBIND11_MODULE(kinz, m) {
             py::arg("coords3d"), py::arg("depth_reference")=true)
         .def("get_depth2pc_map", &Kinect::get_depth2pc_map,
              "Generate a map of xy offsets for depth to pointcloud transformation")
+        .def("get_depth2color_rotation_matrix", &Kinect::get_cameras_rotation_matrix<K4A_CALIBRATION_TYPE_DEPTH, K4A_CALIBRATION_TYPE_COLOR>,
+             "Returns the rotation to transform from depth to color sensors coordinate frames")
+        .def("get_depth2color_translation_vector", &Kinect::get_cameras_translation_vector<K4A_CALIBRATION_TYPE_DEPTH, K4A_CALIBRATION_TYPE_COLOR>,
+             "Returns the translation to transform from depth to color sensors coordinate frames")
+        .def("get_color2depth_rotation_matrix", &Kinect::get_cameras_rotation_matrix<K4A_CALIBRATION_TYPE_COLOR, K4A_CALIBRATION_TYPE_DEPTH>,
+             "Returns the rotation to transform from color to depth sensors coordinate frames")
+        .def("get_color2depth_translation_vector", &Kinect::get_cameras_translation_vector<K4A_CALIBRATION_TYPE_COLOR, K4A_CALIBRATION_TYPE_DEPTH>,
+             "Returns the translation to transform from color to depth sensors coordinate frames")
         #ifdef BODY
         .def("get_num_bodies", &Kinect::get_num_bodies, "Get number of bodies found")
         .def("get_bodies", &Kinect::get_bodies, "Get bodies list")
