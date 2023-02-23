@@ -212,6 +212,30 @@ int Kinect::initialize(uint8_t deviceIndex, int resolution, bool wfov, bool binn
     update_calibration(m_depth_calib, true);
     update_calibration(m_color_calib, false);
 
+    // Get raw calibration string
+    if (m_raw_calib != nullptr)
+    {
+        delete[] m_raw_calib;
+        m_raw_calib = nullptr;
+    }
+    if (K4A_RESULT_SUCCEEDED != k4a_device_get_raw_calibration(m_device, NULL, &m_raw_calib_size)) {
+        printf("Failed to get raw calibration\n");
+        if (m_device) {
+            k4a_device_close(m_device);
+            m_device = NULL;
+            return 1;
+        }
+    }
+    m_raw_calib = new uint8_t[m_raw_calib_size];
+    if (K4A_RESULT_SUCCEEDED != k4a_device_get_raw_calibration(m_device, m_raw_calib, &m_raw_calib_size)) {
+        printf("Failed to get raw calibration\n");
+        if (m_device) {
+            k4a_device_close(m_device);
+            m_device = NULL;
+            return 1;
+        }
+    }
+
     // get transformation to map from depth to color
     m_transformation = k4a_transformation_create(&m_calibration);
 
@@ -304,6 +328,10 @@ Calibration Kinect::get_depth_calibration() {
 
 Calibration Kinect::get_color_calibration() {
     return m_color_calib;
+}
+
+std::string Kinect::get_raw_calibration() {
+    return std::string(reinterpret_cast<char *>(m_raw_calib),m_raw_calib_size);
 }
 
 const int Kinect::get_frames(bool get_color, bool get_depth,

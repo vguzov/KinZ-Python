@@ -130,6 +130,7 @@ PYBIND11_MODULE(kinz, m) {
             py::arg("file_name"))
         .def("get_depth_calibration", &Kinect::get_depth_calibration, py::return_value_policy::copy)
         .def("get_color_calibration", &Kinect::get_color_calibration, py::return_value_policy::copy)
+        .def("get_raw_calibration", &Kinect::get_raw_calibration, "Return the raw calibration string")
         .def("get_serial_number", &Kinect::get_serial_number, "Return the serial number of the kinect")
         .def("close", &Kinect::close)
         .def("set_exposure", &Kinect::set_exposure, "Set exposure time",

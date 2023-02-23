@@ -67,6 +67,8 @@ private:
     k4a_calibration_t m_calibration;
     Calibration m_depth_calib;
     Calibration m_color_calib;
+    uint8_t *m_raw_calib = nullptr;
+    size_t m_raw_calib_size = 0;
     k4a_transformation_t m_transformation = NULL;
 
     int initialize(uint8_t deviceIndex, int resolution, bool wfov,
@@ -107,6 +109,7 @@ public:
     void save_pointcloud(const char *file_name);
     Calibration get_depth_calibration();
     Calibration get_color_calibration();
+    std::string get_raw_calibration();
     std::string get_serial_number();
     void set_exposure(int);
     const int get_exposure();
