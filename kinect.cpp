@@ -218,7 +218,7 @@ int Kinect::initialize(uint8_t deviceIndex, int resolution, bool wfov, bool binn
         delete[] m_raw_calib;
         m_raw_calib = nullptr;
     }
-    if (K4A_RESULT_SUCCEEDED != k4a_device_get_raw_calibration(m_device, NULL, &m_raw_calib_size)) {
+    if (K4A_BUFFER_RESULT_SUCCEEDED != k4a_device_get_raw_calibration(m_device, NULL, &m_raw_calib_size)) {
         printf("Failed to get raw calibration\n");
         if (m_device) {
             k4a_device_close(m_device);
@@ -227,7 +227,7 @@ int Kinect::initialize(uint8_t deviceIndex, int resolution, bool wfov, bool binn
         }
     }
     m_raw_calib = new uint8_t[m_raw_calib_size];
-    if (K4A_RESULT_SUCCEEDED != k4a_device_get_raw_calibration(m_device, m_raw_calib, &m_raw_calib_size)) {
+    if (K4A_BUFFER_RESULT_SUCCEEDED != k4a_device_get_raw_calibration(m_device, m_raw_calib, &m_raw_calib_size)) {
         printf("Failed to get raw calibration\n");
         if (m_device) {
             k4a_device_close(m_device);
