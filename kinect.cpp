@@ -331,7 +331,7 @@ Calibration Kinect::get_color_calibration() {
 }
 
 std::string Kinect::get_raw_calibration() {
-    return std::string(reinterpret_cast<char *>(m_raw_calib),m_raw_calib_size);
+    return std::string(reinterpret_cast<char *>(m_raw_calib),m_raw_calib_size-1);
 }
 
 const int Kinect::get_frames(bool get_color, bool get_depth,
