@@ -29,6 +29,9 @@ Kinect::Kinect(uint8_t deviceIndex, int resolution, bool wfov, bool binned,
 Kinect::~Kinect()
 {
     close();
+    delete[] m_raw_calib;
+    m_raw_calib_size = 0;
+    m_raw_calib = nullptr;
 }
 
 /**
