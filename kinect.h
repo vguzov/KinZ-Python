@@ -49,6 +49,8 @@ private:
     k4a_image_t m_image_ir = nullptr;
     k4a_image_t m_body_index = nullptr;
     bool m_align_depth = false;
+    uint64_t m_last_frameget_timestamp_us = 0;
+    bool m_cameras_started = false;
 
     // Sensor data
     Imu_sample m_imu_data;
@@ -69,6 +71,7 @@ private:
     Calibration m_color_calib;
     uint8_t *m_raw_calib = nullptr;
     size_t m_raw_calib_size = 0;
+    bool m_imu_sensors_requested = false;
     k4a_transformation_t m_transformation = NULL;
 
     int initialize(uint8_t deviceIndex, int resolution, bool wfov,
@@ -104,6 +107,7 @@ public:
     ColorData get_color_data();
     DepthData get_depth_data();
     DepthData get_ir_data();
+    uint64_t get_last_frameget_timestamp_us();
     BufferPointCloud get_pointcloud();
     BufferColor get_pointcloud_color();
     void save_pointcloud(const char *file_name);
@@ -114,13 +118,17 @@ public:
     void set_exposure(int);
     const int get_exposure();
     void set_gain(int);
+    void start_cameras();
+    void stop_cameras();
+    bool get_camera_activation_status();
     std::vector<std::vector<int> > map_coords_color_to_depth(std::vector<std::vector<int> > &color_coords);
     std::vector<std::vector<int> > map_coords_color_to_3D(std::vector<std::vector<int> > &color_coords, bool depth_reference);
     std::vector<std::vector<int> > map_coords_depth_to_color(std::vector<std::vector<int> > &depth_coords);
     std::vector<std::vector<int> > map_coords_depth_to_3D(std::vector<std::vector<int> > &depth_coords, bool depth_reference);
     std::vector<std::vector<int> > map_coords_3d_to_depth(std::vector<std::vector<int> > &coords3d, bool depth_reference);
     std::vector<std::vector<int> > map_coords_3d_to_color(std::vector<std::vector<int> > &coords3d, bool depth_reference);
-    py::array_t<float> get_depth2pc_map();
+    template<k4a_calibration_type_t camera_from, k4a_calibration_type_t camera_to>
+    py::array_t<float> get_image2pc_map();
     template<k4a_calibration_type_t camera_from, k4a_calibration_type_t camera_to>
     py::array_t<float> get_cameras_rotation_matrix();
     template<k4a_calibration_type_t camera_from, k4a_calibration_type_t camera_to>

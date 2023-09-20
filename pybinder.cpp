@@ -133,6 +133,10 @@ PYBIND11_MODULE(kinz, m) {
         .def("get_raw_calibration", &Kinect::get_raw_calibration, "Return the raw calibration string")
         .def("get_serial_number", &Kinect::get_serial_number, "Return the serial number of the kinect")
         .def("close", &Kinect::close)
+        .def("get_camera_activation_status", &Kinect::get_camera_activation_status)
+        .def("start_cameras", &Kinect::start_cameras)
+        .def("stop_cameras", &Kinect::stop_cameras)
+        .def("get_last_frameget_timestamp_usec", &Kinect::get_last_frameget_timestamp_us)
         .def("set_exposure", &Kinect::set_exposure, "Set exposure time",
             py::arg("exposure"))
         .def("set_gain", &Kinect::set_gain, "Set sensor gain",
@@ -154,8 +158,10 @@ PYBIND11_MODULE(kinz, m) {
         .def("map_coords_3d_to_color", &Kinect::map_coords_3d_to_color,
             "Map 3D coordinates to color space",
             py::arg("coords3d"), py::arg("depth_reference")=true)
-        .def("get_depth2pc_map", &Kinect::get_depth2pc_map,
+        .def("get_depth2pc_map", &Kinect::get_image2pc_map<K4A_CALIBRATION_TYPE_DEPTH, K4A_CALIBRATION_TYPE_DEPTH>,
              "Generate a map of xy offsets for depth to pointcloud transformation")
+        .def("get_color2pc_map", &Kinect::get_image2pc_map<K4A_CALIBRATION_TYPE_COLOR, K4A_CALIBRATION_TYPE_COLOR>,
+             "Generate a map of xy offsets for color to pointcloud transformation")
         .def("get_depth2color_rotation_matrix", &Kinect::get_cameras_rotation_matrix<K4A_CALIBRATION_TYPE_DEPTH, K4A_CALIBRATION_TYPE_COLOR>,
              "Returns the rotation to transform from depth to color sensors coordinate frames")
         .def("get_depth2color_translation_vector", &Kinect::get_cameras_translation_vector<K4A_CALIBRATION_TYPE_DEPTH, K4A_CALIBRATION_TYPE_COLOR>,

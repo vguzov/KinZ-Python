@@ -10,6 +10,7 @@
 
 #include <string>
 #include <memory>
+#include <chrono>
 #include <iostream>
 #include <math.h>
 #include "kinect.h"
@@ -48,10 +49,11 @@ int Kinect::initialize(uint8_t deviceIndex, int resolution, bool wfov, bool binn
     bool body_index, const std::string sync_mode, int sync_capture_delay)
 {
     // Values initialization
+    m_imu_sensors_requested = imu_sensors;
     // Color resolution
     this->res = resolution;
     // General configuration of the device
-    k4a_device_configuration_t m_config = K4A_DEVICE_CONFIG_INIT_DISABLE_ALL;
+    m_config = K4A_DEVICE_CONFIG_INIT_DISABLE_ALL;
     // Sensors sync
     m_config.synchronized_images_only = false;
     // Color OFF
@@ -242,37 +244,50 @@ int Kinect::initialize(uint8_t deviceIndex, int resolution, bool wfov, bool binn
     // get transformation to map from depth to color
     m_transformation = k4a_transformation_create(&m_calibration);
 
-    if (K4A_RESULT_SUCCEEDED != k4a_device_start_cameras(m_device, &m_config)) {
-        printf("Failed to start m_device\n");
-        if (m_device) {
-            k4a_device_close(m_device);
-            m_device = NULL;
-            return 1;
-        }
+
+//    this->start_cameras();
+//
+//    return m_cameras_started ? 0 : 1;
+
+    return 0;
+} // initialize
+
+void Kinect::start_cameras() {
+    if (m_cameras_started) {
+        printf("[WARNING] Camera start attempt, but camera is already started\n");
+        return;
     }
-    else
+
+    if (K4A_RESULT_SUCCEEDED != k4a_device_start_cameras(m_device, &m_config)) {
+        m_cameras_started = false;
+        printf("Failed to start cameras\n");
+        return;
+    }
+    else {
+        m_cameras_started = true;
         printf("Kinect started successfully!!\n");
+    }
 
     if (K4A_RESULT_SUCCEEDED != k4a_device_set_color_control(m_device,
-                                    K4A_COLOR_CONTROL_POWERLINE_FREQUENCY,
-                                    K4A_COLOR_CONTROL_MODE_MANUAL, 2)) {
-            printf("Failed to change power frequency\n");
+                                                             K4A_COLOR_CONTROL_POWERLINE_FREQUENCY,
+                                                             K4A_COLOR_CONTROL_MODE_MANUAL, 2)) {
+        printf("Failed to change power frequency\n");
     }
 
     // Start IMU sensors
     m_imu_sensors_available = false;
-    if(imu_sensors) {
+    if(m_imu_sensors_requested) {
         if(k4a_device_start_imu(m_device) == K4A_RESULT_SUCCEEDED) {
             printf("IMU sensors started succesfully.\n");
             m_imu_sensors_available = true;
         }
         else {
-            printf("IMU SENSORES FAILED INITIALIZATION!\n");
+            printf("IMU SENSORS FAILED INITIALIZATION!\n");
             m_imu_sensors_available = false;
         }
     }
 
-    #ifdef BODY
+#ifdef BODY
     // Start tracker
     m_body_tracking_available = false;
     m_num_bodies = 0;
@@ -287,11 +302,55 @@ int Kinect::initialize(uint8_t deviceIndex, int resolution, bool wfov, bool binn
             m_body_tracking_available = false;
         }
     }
-    #endif
+#endif
 
+    return;
+}
 
-    return 0;
-} // initialize
+void Kinect::stop_cameras() {
+    if (!m_cameras_started)
+        return;
+#ifdef BODY
+    if (m_tracker != NULL) {
+        k4abt_tracker_shutdown(m_tracker);
+        k4abt_tracker_destroy(m_tracker);
+        m_tracker = NULL;
+    }
+    if (m_body_index) {
+        k4a_image_release(m_body_index);
+        m_body_index = NULL;
+    }
+    if (m_body_frame) {
+        k4abt_frame_release(m_body_frame);
+        m_body_frame = NULL;
+    }
+#endif
+
+    if (m_device != NULL) {
+        k4a_device_stop_cameras(m_device);
+    }
+    if (m_image_c != NULL) {
+        k4a_image_release(m_image_c);
+        m_image_c = NULL;
+    }
+    if (m_image_d != NULL) {
+        k4a_image_release(m_image_d);
+        m_image_d = NULL;
+    }
+    if (m_image_d_org != NULL) {
+        k4a_image_release(m_image_d_org);
+        m_image_d_org = NULL;
+    }
+    if (m_image_ir) {
+        k4a_image_release(m_image_ir);
+        m_image_ir = NULL;
+    }
+    if (m_capture != NULL) {
+        k4a_capture_release(m_capture);
+        m_capture = NULL;
+    }
+    m_cameras_started = false;
+}
 
 
 void Kinect::update_calibration(Calibration &calib_struct, bool depth) {
@@ -341,6 +400,10 @@ const int Kinect::get_frames(bool get_color, bool get_depth,
                              bool get_ir, bool get_sensors,
                              bool get_body, bool get_body_index,
                              bool align_depth) {
+    if(!m_cameras_started){
+        printf("Error: Cameras are not started, ignoring get_frames");
+        return 0;
+    }
     m_align_depth = align_depth;
     bool good_color = true, good_depth = true, good_ir = true;
     if (this->res==0)
@@ -391,13 +454,18 @@ const int Kinect::get_frames(bool get_color, bool get_depth,
         case K4A_WAIT_RESULT_FAILED:
             printf("Failed to read a m_capture\n");
             printf("Restarting streaming ...");
-            k4a_device_stop_cameras	(m_device);
+            k4a_device_stop_cameras(m_device);
             if(K4A_RESULT_SUCCEEDED != k4a_device_start_cameras(m_device, &m_config)) {
                 printf("Failed to restart streaming\n");
                 k4a_device_stop_cameras	(m_device);
                 return 0;
             }
+            break;
+        default:
+            break;
     }
+    m_last_frameget_timestamp_us = std::chrono::duration_cast<std::chrono::microseconds>(
+            std::chrono::system_clock::now().time_since_epoch()).count();
 
     // Get color image
     if(get_color) {
@@ -517,6 +585,14 @@ const int Kinect::get_frames(bool get_color, bool get_depth,
     else
         return 0;
 } // get_frames
+
+uint64_t Kinect::get_last_frameget_timestamp_us() {
+    return m_last_frameget_timestamp_us;
+}
+
+bool Kinect::get_camera_activation_status() {
+    return m_cameras_started;
+}
 
 Imu_sample Kinect::get_sensor_data() {
     return m_imu_data;
@@ -667,47 +743,11 @@ std::string Kinect::get_serial_number()
     return this->serial_number;
 }
 
-void Kinect::close(){
-    #ifdef BODY
-    if (m_tracker != NULL) {
-        k4abt_tracker_shutdown(m_tracker);
-        k4abt_tracker_destroy(m_tracker);
-        m_tracker = NULL;
-    }
-    if (m_body_index) {
-        k4a_image_release(m_body_index);
-        m_body_index = NULL;
-    }
-    if (m_body_frame) {
-        k4abt_frame_release(m_body_frame);
-        m_body_frame = NULL;
-    }
-    #endif
-
+void Kinect::close() {
+    this->stop_cameras();
     if (m_device != NULL) {
-        k4a_device_stop_cameras(m_device);
         k4a_device_close(m_device);
         m_device = NULL;
-    }
-    if (m_image_c != NULL) {
-        k4a_image_release(m_image_c);
-        m_image_c = NULL;
-    }
-    if (m_image_d != NULL) {
-        k4a_image_release(m_image_d);
-        m_image_d = NULL;
-    }
-    if (m_image_d_org != NULL) {
-        k4a_image_release(m_image_d_org);
-        m_image_d_org = NULL;
-    }
-    if (m_image_ir) {
-        k4a_image_release(m_image_ir);
-        m_image_ir = NULL;
-    }
-    if (m_capture != NULL) {
-        k4a_capture_release(m_capture);
-        m_capture = NULL;
     }
 }
 
@@ -1143,9 +1183,15 @@ void Kinect::save_pointcloud(const char *file_name) {
     }
 }
 
-py::array_t<float> Kinect::get_depth2pc_map() {
-    auto depth_calibration = get_depth_calibration();
-    int width = depth_calibration.width, height = depth_calibration.height;
+template<k4a_calibration_type_t camera_from, k4a_calibration_type_t camera_to>
+py::array_t<float> Kinect::get_image2pc_map() {
+    Calibration camera_calibration;
+    if constexpr(camera_from == K4A_CALIBRATION_TYPE_COLOR) {
+        camera_calibration = get_color_calibration();
+    } else {
+        camera_calibration = get_depth_calibration();
+    }
+    int width = camera_calibration.width, height = camera_calibration.height;
     float *map = new float[width*height*2];
     k4a_float2_t p;
     k4a_float3_t ray;
@@ -1159,7 +1205,7 @@ py::array_t<float> Kinect::get_depth2pc_map() {
             p.xy.x = (float)x;
 
             k4a_calibration_2d_to_3d(
-                    &m_calibration, &p, 1.f, K4A_CALIBRATION_TYPE_DEPTH, K4A_CALIBRATION_TYPE_DEPTH, &ray, &valid);
+                    &m_calibration, &p, 1.f, camera_from, camera_to, &ray, &valid);
 
             if (valid)
             {
@@ -1231,6 +1277,8 @@ template py::array_t<float> Kinect::get_cameras_rotation_matrix<K4A_CALIBRATION_
 template py::array_t<float> Kinect::get_cameras_translation_vector<K4A_CALIBRATION_TYPE_DEPTH, K4A_CALIBRATION_TYPE_COLOR>();
 template py::array_t<float> Kinect::get_cameras_rotation_matrix<K4A_CALIBRATION_TYPE_COLOR, K4A_CALIBRATION_TYPE_DEPTH>();
 template py::array_t<float> Kinect::get_cameras_translation_vector<K4A_CALIBRATION_TYPE_COLOR, K4A_CALIBRATION_TYPE_DEPTH>();
+template py::array_t<float> Kinect::get_image2pc_map<K4A_CALIBRATION_TYPE_DEPTH, K4A_CALIBRATION_TYPE_DEPTH>();
+template py::array_t<float> Kinect::get_image2pc_map<K4A_CALIBRATION_TYPE_COLOR, K4A_CALIBRATION_TYPE_COLOR>();
 
 
 #ifdef BODY
