@@ -26,6 +26,9 @@
  * Implementation of K4a wrapper for python bindings
  * 
  */
+
+uint32_t get_connected_kinects_count();
+
 class Kinect {
 private:
     int res;

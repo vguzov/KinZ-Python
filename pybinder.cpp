@@ -106,6 +106,7 @@ PYBIND11_MODULE(kinz, m) {
         .def_readonly("system_timestamp_nsec", &BodyIndexData::system_timestamp_nsec)
         .def_readonly("device_timestamp_usec", &BodyIndexData::device_timestamp_usec);
 
+    m.def("get_connected_kinects_count", &get_connected_kinects_count);
 
     py::class_<Kinect>(m, "Kinect")
         .def(py::init<uint8_t, int, bool, bool, uint8_t, bool, bool, bool, bool, bool, bool, const std::string, int>(),

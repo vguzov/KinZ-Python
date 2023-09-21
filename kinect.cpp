@@ -18,6 +18,11 @@
 #include <pybind11/stl.h>
 #include <pybind11/numpy.h>
 
+uint32_t get_connected_kinects_count() {
+    uint32_t device_count = k4a_device_get_installed_count();
+    return device_count;
+}
+
 Kinect::Kinect(uint8_t deviceIndex, int resolution, bool wfov, bool binned,
                uint8_t framerate, bool sensor_color, bool sensor_depth,
                bool sensor_ir, bool imu_sensors, bool body_tracking,
